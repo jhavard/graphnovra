@@ -1,0 +1,30 @@
+This is a quick and dirty script to grab the xml status from the Novra 'cmcs' utility,
+grab the items we care about, add those to an rrd file, and then generate graphs.  Not
+really concerned with much more than the past day, but I made the rrd database large
+enough to give a decade's worth of data to the 15 minute mark (I think).  Since I can
+never remember how to generate an rrd file, I googled for some little online thing
+that will help.  Take a look at http://rrdwizard.appspot.com/ if you are in the same boat.
+
+This entire thing is probably wrong, but it works, so close enough.
+
+rrdtool create satellite.rrd --step '60' \
+  'DS:sigdbm:GAUGE:180:-100:5' 'DS:sigcn:GAUGE:180:-100:100' 'DS:dvbaccepted:COUNTER:180:U:U' \
+  'DS:ethout:COUNTER:180:U:U' DS:freqoffset:GAUGE:180:-10000000:10000000 \
+  'DS:uncorr:GAUGE:180:0:1000000' 'DS:VBER:GAUGE:180:-1000000:1000000' \
+  'DS:PER:GAUGE:180:-1000000:1000000' 'RRA:MAX:0.5:1:130000' \
+  'RRA:AVERAGE:0.5:1:130000' 'RRA:MIN:0.5:1:130000' 'RRA:MAX:0.5:5:260000' \
+  'RRA:AVERAGE:0.5:5:260000' 'RRA:MIN:0.5:5:260000' 'RRA:MAX:0.5:15:350400' \
+  'RRA:AVERAGE:0.5:15:350400' 'RRA:MIN:0.5:15:350400' 'RRA:LAST:0.5:1:260000'
+  
+Also, please note that on my systems, the 'cmcs' command is actually a wrapper that supplies 
+the appropriate IP and password for the receiver and then passes all arguments to the real
+cmcs utility.  Actually, since the satellite multicast network is on a separate switch,
+I took it a step further.  The real cmcs utility is on the host that runs the 
+NOAAport ingest processes, as is the first level wrapper.  All the other hosts on the
+network have a second level wrapper that connects to that machine via ssh and runs
+the top-level wrapper.
+
+That being said, the script that updates the rrd file and generates the graphs is running
+on the NOAAport box, and that directory is mounted via nfs on the web server.  It doesn't
+have to be that way, it just seemed right at the time.
+
